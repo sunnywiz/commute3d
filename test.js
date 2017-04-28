@@ -78,36 +78,39 @@ function trackSquashTimeComponent(track) {
   track.forEach(p => { p.time -= bounds.t1 });
 }
 
+function trackRescale(track, bounds, config) {
+  var xs = (config.printX) / (bounds.x2 - bounds.x1);
+  var ys = (config.printY) / (bounds.y2 - bounds.y1);
+  var ts = (config.printZ) / (bounds.t2 - bounds.t1);
+
+  track.forEach(p => {
+    p.long = (p.long - bounds.x1) * xs;
+    p.lat = (p.lat - bounds.y1) * ys;
+    p.time = (p.time - bounds.t1) * ts;
+  });
+}
+
 readTracks()
   .then(tracks => {
     tracks.forEach(trackSquashTimeComponent);
     var bounds = tracksGetBounds(tracks);
     console.log(bounds);
-  });
+    tracks.forEach(track => trackRescale(track, bounds, config));
+    var bounds2 = tracksGetBounds(tracks);
+    console.log(bounds2);
 
-/*
-var clat = " Latitude"; 
-var clon = " Longitude"; 
-var ctime = " Device Time";
-
-var olat = 38.30081015;
-var olon = -85.47210991666667;
-
-var model = CSG.cube({size:1});
-
-var p = csvdata
-  .load("input/trackLog-2012-Dec-30_18-26-55.csv")
-  .then(function(x) { 
-    x.forEach(function(y)  { 
-      if (y[clat] && y[clon] && y[ctime] && typeof(y[clat])=='number') { 
-        var lat = y[clat] - olat;  
-        var long = y[clon] - olon; 
-        var time = Date.parse(y[ctime]);
-        var cube = CSG.cube({size:1}).translate([long*1000,lat*1000,0]);
-        model = model.union(cube); 
-        console.log(time);
-      }
+    var x = [];
+    tracks.forEach(track => {
+      track.forEach(point => {
+        var cube = CSG.cube({ size: config.printRadius }).translate(point.lat, point.long, point.time);
+        x.push(cube);
+      })
     });
-    cad.renderFile(model,'output.stl');  
-  }); 
-*/
+    console.log("Merging everything");
+    var model = x.pop();
+    for (var i=0; i<x.length; i++) { 
+      console.log("merging point "+i+" of "+x.length);
+      model = model.union(x[i]);
+    }
+    cad.renderFile(model, 'output.stl');
+  });
