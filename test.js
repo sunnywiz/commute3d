@@ -2,6 +2,7 @@ const cad = require ('jscad');
 const fs = require('fs'); 
 const csvdata = require("csvdata");
 const glob = require("glob");
+const bluebird = require("bluebird");
 
 var config = { 
   // input files
@@ -46,19 +47,10 @@ function readTrack(fileName) {
 function readTracks() { 
   return new Promise((resolve,reject)=>{
     glob(config.trackFiles, {}, function(er, files) { 
-      var promises = [];
-      var result = ['A']; 
-      for (var i=0; i<files.length; i++) { 
-        console.log("pushing a promise");
-        promises.push( 
-          readTrack(files[i])
-          .then(function(track) { 
-            result.push(track);
-          })
-        );
-      }
-      Promise.all(promises)
-      .then(function() { resolve(result) });
+      bluebird.map(files,function(fileName) { 
+        return readTrack(fileName);
+      })
+      .then(function(result) { resolve(result);});
     }); // glob
   }); // return promise
 }
