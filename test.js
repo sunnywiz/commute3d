@@ -1,7 +1,72 @@
 const cad = require ('jscad'); 
 const fs = require('fs'); 
-var csvdata = require("csvdata");
+const csvdata = require("csvdata");
+const glob = require("glob");
 
+var config = { 
+  // input files
+  trackFiles: "input/trackLog*.csv",
+  csvLatitudeColumn: " Latitude",
+  csvLongitudeColumn: " Longitude",
+  csvTimeColumn: " Device Time",
+  
+  // generated dimensions
+  printX: 100,
+  printY: 100,
+  printZ: 100,
+  printRadius: 1
+
+};
+
+function readTrack(fileName) { 
+  return new Promise((resolve,reject)=> { 
+    csvdata
+      .load(fileName)
+      .then(function(contents) { 
+        var result = []; 
+        contents.forEach(function(line)  { 
+          if (line[config.csvLatitudeColumn] && typeof(line[config.csvLatitudeColumn])=='number' &&
+              line[config.csvLongitudeColumn] && typeof(line[config.csvLongitudeColumn])=='number' && 
+              line[config.csvTimeColumn]) 
+          { 
+            var lat = line[config.csvLatitudeColumn];  
+            var long = line[config.csvLongitudeColumn]; 
+            var time = Date.parse(line[config.csvTimeColumn]);
+            result.push({lat:lat, long:long, time:time});
+          }
+        });
+        resolve(result);        
+      }); 
+  });
+}
+
+// returns an array of tracks
+// each track is an array of { time: , lat: , long: }
+// where the time has been reset to start at zero. 
+function readTracks() { 
+  return new Promise((resolve,reject)=>{
+    glob(config.trackFiles, {}, function(er, files) { 
+      var promises = [];
+      var result = ['A']; 
+      for (var i=0; i<files; i++) { 
+        console.log("pushing a promise");
+        promises.push( 
+          readTrack(files[i])
+          .then(function(track) { 
+            result.push(track);
+          })
+        );
+      }
+      Promise.all(promises)
+      .then(function() { resolve(result) });
+    }); // glob
+  }); // return promise
+}
+
+readTracks()
+.then(console.log);
+
+/*
 var clat = " Latitude"; 
 var clon = " Longitude"; 
 var ctime = " Device Time";
@@ -26,3 +91,4 @@ var p = csvdata
     });
     cad.renderFile(model,'output.stl');  
   }); 
+*/

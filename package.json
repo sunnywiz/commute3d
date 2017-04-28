@@ -1,7 +1,7 @@
 {
   "name": "commute3d",
   "version": "1.0.0",
-  "description": "",
+  "description": "Make STL of my commute from tracklogs",
   "main": "test.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "csvdata": "^1.4.0",
+    "glob": "^7.1.1",
     "jscad": "^1.1.0"
   }
 }
