@@ -102,13 +102,13 @@ readTracks()
     var x = [];
     tracks.forEach(track => {
       track.forEach(point => {
-        var cube = CSG.cube({ size: config.printRadius }).translate(point.lat, point.long, point.time);
+        var cube = CSG.cube({ size: config.printRadius }).translate([point.lat, point.long, point.time]);
         x.push(cube);
       })
     });
     console.log("Merging everything");
     var model = x.pop();
-    for (var i=0; i<x.length; i++) { 
+    for (var i=0; i<x.length; i+=2) { 
       console.log("merging point "+i+" of "+x.length);
       model = model.union(x[i]);
     }
