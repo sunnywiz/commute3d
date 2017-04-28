@@ -47,16 +47,16 @@ function readTrack(fileName) {
 function readTracks() { 
   return new Promise((resolve,reject)=>{
     glob(config.trackFiles, {}, function(er, files) { 
-      bluebird.map(files,function(fileName) { 
-        return readTrack(fileName);
-      })
-      .then(function(result) { resolve(result);});
+      bluebird.map(files,fileName=>readTrack(fileName))
+        .then(resolve);
     }); // glob
   }); // return promise
 }
 
 readTracks()
-.then(console.log);
+.then(tracks=>{ 
+console.log("Read "+tracks.length+" tracks");
+});
 
 /*
 var clat = " Latitude"; 
