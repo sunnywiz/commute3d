@@ -1,16 +1,16 @@
-const cad = require ('jscad'); 
-const fs = require('fs'); 
+const cad = require('jscad');
+const fs = require('fs');
 const csvdata = require("csvdata");
 const glob = require("glob");
 const bluebird = require("bluebird");
 
-var config = { 
+var config = {
   // input files
   trackFiles: "input/trackLog*.csv",
   csvLatitudeColumn: " Latitude",
   csvLongitudeColumn: " Longitude",
   csvTimeColumn: " Device Time",
-  
+
   // generated dimensions
   printX: 100,
   printY: 100,
@@ -19,44 +19,65 @@ var config = {
 
 };
 
-function readTrack(fileName) { 
-  return new Promise((resolve,reject)=> { 
+function readTrack(fileName) {
+  return new Promise((resolve, reject) => {
     csvdata
       .load(fileName)
-      .then(function(contents) { 
-        var result = []; 
-        contents.forEach(function(line)  { 
-          if (line[config.csvLatitudeColumn] && typeof(line[config.csvLatitudeColumn])=='number' &&
-              line[config.csvLongitudeColumn] && typeof(line[config.csvLongitudeColumn])=='number' && 
-              line[config.csvTimeColumn]) 
-          { 
-            var lat = line[config.csvLatitudeColumn];  
-            var long = line[config.csvLongitudeColumn]; 
+      .then(function (contents) {
+        var result = [];
+        contents.forEach(function (line) {
+          if (line[config.csvLatitudeColumn] && typeof (line[config.csvLatitudeColumn]) == 'number' &&
+            line[config.csvLongitudeColumn] && typeof (line[config.csvLongitudeColumn]) == 'number' &&
+            line[config.csvTimeColumn]) {
+            var lat = line[config.csvLatitudeColumn];
+            var long = line[config.csvLongitudeColumn];
             var time = Date.parse(line[config.csvTimeColumn]);
-            result.push({lat:lat, long:long, time:time});
+            result.push({ lat: lat, long: long, time: time });
           }
         });
-        resolve(result);        
-      }); 
+        resolve(result);
+      });
   });
 }
 
 // returns an array of tracks
 // each track is an array of { time: , lat: , long: }
 // where the time has been reset to start at zero. 
-function readTracks() { 
-  return new Promise((resolve,reject)=>{
-    glob(config.trackFiles, {}, function(er, files) { 
-      bluebird.map(files,fileName=>readTrack(fileName))
+function readTracks() {
+  return new Promise((resolve, reject) => {
+    glob(config.trackFiles, {}, function (er, files) {
+      bluebird.map(files, fileName => readTrack(fileName))
         .then(resolve);
     }); // glob
   }); // return promise
 }
 
+function trackGetBounds(track, bounds) {
+  if (!bounds) {
+    bounds = {};
+  }
+  track.forEach(point => {
+    if (!bounds.x1 || point.long < bounds.x1) bounds.x1 = point.long;
+    if (!bounds.x2 || point.long > bounds.x2) bounds.x2 = point.long;
+    if (!bounds.y1 || point.lat < bounds.y1) bounds.y1 = point.lat;
+    if (!bounds.y2 || point.lat > bounds.y2) bounds.y2 = point.lat;
+    if (!bounds.t1 || point.time < bounds.t1) bounds.t1 = point.time;
+    if (!bounds.t2 || point.time > bounds.t2) bounds.t2 = point.time;
+  });
+  return bounds;
+}
+
+function tracksGetBounds(tracks) { 
+  bounds = {}; 
+  tracks.forEach(track=> bounds = trackGetBounds(track,bounds));
+  return bounds; 
+}
+
 readTracks()
-.then(tracks=>{ 
-console.log("Read "+tracks.length+" tracks");
-});
+  .then(tracks => {
+    var bounds = tracksGetBounds(tracks); 
+    console.log(bounds); 
+  });
 
 /*
 var clat = " Latitude"; 
