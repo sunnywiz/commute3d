@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "csvdata": "^1.4.0",
     "jscad": "^1.1.0"
   }
 }
