@@ -48,7 +48,7 @@ function readTracks() {
     glob(config.trackFiles, {}, function(er, files) { 
       var promises = [];
       var result = ['A']; 
-      for (var i=0; i<files; i++) { 
+      for (var i=0; i<files.length; i++) { 
         console.log("pushing a promise");
         promises.push( 
           readTrack(files[i])
