@@ -54,29 +54,35 @@ function readTracks() {
 
 function trackGetBounds(track, bounds) {
   if (!bounds) {
-    bounds = {};
+    bounds = { x1: undefined, x2: undefined, y1: undefined, y2: undefined, t1: undefined, t2: undefined };
   }
   track.forEach(point => {
-    if (!bounds.x1 || point.long < bounds.x1) bounds.x1 = point.long;
-    if (!bounds.x2 || point.long > bounds.x2) bounds.x2 = point.long;
-    if (!bounds.y1 || point.lat < bounds.y1) bounds.y1 = point.lat;
-    if (!bounds.y2 || point.lat > bounds.y2) bounds.y2 = point.lat;
-    if (!bounds.t1 || point.time < bounds.t1) bounds.t1 = point.time;
-    if (!bounds.t2 || point.time > bounds.t2) bounds.t2 = point.time;
+    if (bounds.x1 === undefined || point.long < bounds.x1) bounds.x1 = point.long;
+    if (bounds.x2 === undefined || point.long > bounds.x2) bounds.x2 = point.long;
+    if (bounds.y1 === undefined || point.lat < bounds.y1) bounds.y1 = point.lat;
+    if (bounds.y2 === undefined || point.lat > bounds.y2) bounds.y2 = point.lat;
+    if (bounds.t1 === undefined || point.time < bounds.t1) bounds.t1 = point.time;
+    if (bounds.t2 === undefined || point.time > bounds.t2) bounds.t2 = point.time;
   });
   return bounds;
 }
 
-function tracksGetBounds(tracks) { 
-  bounds = {}; 
-  tracks.forEach(track=> bounds = trackGetBounds(track,bounds));
-  return bounds; 
+function tracksGetBounds(tracks) {
+  bounds = { x1: undefined, x2: undefined, y1: undefined, y2: undefined, t1: undefined, t2: undefined };
+  tracks.forEach(track => bounds = trackGetBounds(track, bounds));
+  return bounds;
+}
+
+function trackSquashTimeComponent(track) {
+  var bounds = trackGetBounds(track);
+  track.forEach(p => { p.time -= bounds.t1 });
 }
 
 readTracks()
   .then(tracks => {
-    var bounds = tracksGetBounds(tracks); 
-    console.log(bounds); 
+    tracks.forEach(trackSquashTimeComponent);
+    var bounds = tracksGetBounds(tracks);
+    console.log(bounds);
   });
 
 /*
