@@ -15,7 +15,7 @@ var config = {
   printX: 650,
   printY: 550,
   printZ: 360,
-  printRadius: 3
+  printRadius: 6
 
 };
 
@@ -100,20 +100,36 @@ readTracks()
     console.log(bounds2);
 
     var modelBits = [];
+    var desiredDistance = Math.pow(config.printRadius,2); 
+
     for (var i1 = 0; i1 < tracks.length; i1++) { 
       var track = tracks[i1]; 
       if (track.length < 3) continue; 
+      var previousIndex = 0; 
       modelBits.push(new CSG.sphere({
-        center:[track[0].long, track[0].lat, track[0].time],
+        center:[track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
         radius:config.printRadius/2,
         resolution:8
       })); 
       for (var i2 = 1; i2 < track.length; i2++) { 
+
+        var distsq = Math.pow(track[i2].long-track[previousIndex].long,2) + 
+                     Math.pow(track[i2].lat -track[previousIndex].lat ,2) + 
+                     Math.pow(track[i2].time-track[previousIndex].time,2); 
+        if (distsq < desiredDistance) continue; 
+
         modelBits.push(new CSG.sphere({
           center:[track[i2].long, track[i2].lat, track[i2].time],
           radius:config.printRadius/2,
           resolution:8
-        })); 
+        }));
+        modelBits.push(new CSG.cylinder({
+          start: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
+          end: [track[i2].long, track[i2].lat, track[i2].time],
+          radius: config.printRadius/2,
+          resolution: 8
+        }));
+        previousIndex = i2; 
       }
     }
     cad.renderFile(modelBits, 'output.stl');
