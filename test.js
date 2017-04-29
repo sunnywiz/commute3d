@@ -90,6 +90,21 @@ function trackRescale(track, bounds, config) {
   });
 }
 
+function fancyUnion(m) { 
+  if (m.length == 1) return m[0];
+  if (m.length == 2) { 
+    console.log("union2 of "+m[0].polygons.length+" vs "+m[1].polygons.length);
+    return m[0].union(m[1]);
+  }
+  var midpoint = Math.floor(m.length / 2);
+  var part1 = m.slice(0,midpoint+1);
+  var part2 = m.slice(midpoint+1);
+  var union1 = fancyUnion(part1); 
+  var union2 = fancyUnion(part2); 
+  console.log("union3 of "+union1.polygons.length+" vs "+union2.polygons.length);
+  return union1.union(union2); 
+}
+
 readTracks()
   .then(tracks => {
     tracks.forEach(trackSquashTimeComponent);
@@ -166,5 +181,8 @@ readTracks()
         previousIndex = i2; 
       }
     }
+
+    modelBits = fancyUnion(modelBits);
+
     cad.renderFile(modelBits, 'output.stl');
   });
