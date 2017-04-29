@@ -12,10 +12,10 @@ var config = {
   csvTimeColumn: " Device Time",
 
   // generated dimensions
-  printX: 100,
-  printY: 100,
-  printZ: 100,
-  printRadius: 1
+  printX: 650,
+  printY: 550,
+  printZ: 360,
+  printRadius: 3
 
 };
 
@@ -99,18 +99,22 @@ readTracks()
     var bounds2 = tracksGetBounds(tracks);
     console.log(bounds2);
 
-    var x = [];
-    tracks.forEach(track => {
-      track.forEach(point => {
-        var cube = CSG.cube({ size: config.printRadius }).translate([point.lat, point.long, point.time]);
-        x.push(cube);
-      })
-    });
-    console.log("Merging everything");
-    var model = x.pop();
-    for (var i=0; i<x.length; i+=2) { 
-      console.log("merging point "+i+" of "+x.length);
-      model = model.union(x[i]);
+    var modelBits = [];
+    for (var i1 = 0; i1 < tracks.length; i1++) { 
+      var track = tracks[i1]; 
+      if (track.length < 3) continue; 
+      modelBits.push(new CSG.sphere({
+        center:[track[0].long, track[0].lat, track[0].time],
+        radius:config.printRadius/2,
+        resolution:8
+      })); 
+      for (var i2 = 1; i2 < track.length; i2++) { 
+        modelBits.push(new CSG.sphere({
+          center:[track[i2].long, track[i2].lat, track[i2].time],
+          radius:config.printRadius/2,
+          resolution:8
+        })); 
+      }
     }
-    cad.renderFile(model, 'output.stl');
+    cad.renderFile(modelBits, 'output.stl');
   });
