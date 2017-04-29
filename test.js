@@ -6,16 +6,16 @@ const bluebird = require("bluebird");
 
 var config = {
   // input files
-  trackFiles: "input/trackLog*.csv",
+  trackFiles: "H:/BtSyncTest1/Dropbox-Live/Dropbox/Apps/Torque/torque.tripLogs/*/*.csv",
   csvLatitudeColumn: " Latitude",
   csvLongitudeColumn: " Longitude",
   csvTimeColumn: " Device Time",
 
   // generated dimensions
-  printX: 650,
-  printY: 550,
-  printZ: 360,
-  printRadius: 6
+  printX: 100,
+  printY: 100,
+  printZ: 50,
+  printRadius: 2
 
 };
 
@@ -90,19 +90,22 @@ function trackRescale(track, bounds, config) {
   });
 }
 
-function fancyUnion(m) { 
+function fancyUnion(m,i) { 
+  console.log("fancyunion("+m.length+","+i+")");
   if (m.length == 1) return m[0];
   if (m.length == 2) { 
-    console.log("union2 of "+m[0].polygons.length+" vs "+m[1].polygons.length);
     return m[0].union(m[1]);
   }
   var midpoint = Math.floor(m.length / 2);
   var part1 = m.slice(0,midpoint+1);
   var part2 = m.slice(midpoint+1);
-  var union1 = fancyUnion(part1); 
-  var union2 = fancyUnion(part2); 
-  console.log("union3 of "+union1.polygons.length+" vs "+union2.polygons.length);
-  return union1.union(union2); 
+  var union1 = fancyUnion(part1,i+1); 
+  var union2 = fancyUnion(part2,i+1); 
+  console.log("  got back u1[0.."+midpoint+"]="+union1.polygons.length);
+  console.log("  got back u2["+(midpoint+1)+".."+(m.length-1)+"]="+union2.polygons.length);
+  var u = union1.union(union2); 
+  console.log("  unioned to "+u.polygons.length);
+  return u; 
 }
 
 readTracks()
@@ -182,7 +185,7 @@ readTracks()
       }
     }
 
-    modelBits = fancyUnion(modelBits);
+    // modelBits = fancyUnion(modelBits,1);
 
     cad.renderFile(modelBits, 'output.stl');
   });
