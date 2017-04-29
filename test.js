@@ -10,11 +10,15 @@ var config = {
   csvLatitudeColumn: " Latitude",
   csvLongitudeColumn: " Longitude",
   csvTimeColumn: " Device Time",
+  minLat: 38.214872,
+  minLong: -85.656204,
+  maxLat: 38.356757,
+  maxLong: -85.453142,
 
   // generated dimensions
-  printX: 100,
-  printY: 100,
-  printZ: 50,
+  printX: 200,
+  printY: 200,
+  printZ: 100,
   printRadius: 2
 
 };
@@ -90,26 +94,51 @@ function trackRescale(track, bounds, config) {
   });
 }
 
-function fancyUnion(m,i) { 
-  console.log("fancyunion("+m.length+","+i+")");
+function fancyUnion(m, i) {
+  console.log("fancyunion(" + m.length + "," + i + ")");
   if (m.length == 1) return m[0];
-  if (m.length == 2) { 
+  if (m.length == 2) {
     return m[0].union(m[1]);
   }
   var midpoint = Math.floor(m.length / 2);
-  var part1 = m.slice(0,midpoint+1);
-  var part2 = m.slice(midpoint+1);
-  var union1 = fancyUnion(part1,i+1); 
-  var union2 = fancyUnion(part2,i+1); 
-  console.log("  got back u1[0.."+midpoint+"]="+union1.polygons.length);
-  console.log("  got back u2["+(midpoint+1)+".."+(m.length-1)+"]="+union2.polygons.length);
-  var u = union1.union(union2); 
-  console.log("  unioned to "+u.polygons.length);
-  return u; 
+  var part1 = m.slice(0, midpoint + 1);
+  var part2 = m.slice(midpoint + 1);
+  var union1 = fancyUnion(part1, i + 1);
+  var union2 = fancyUnion(part2, i + 1);
+  console.log("  got back u1[0.." + midpoint + "]=" + union1.polygons.length);
+  console.log("  got back u2[" + (midpoint + 1) + ".." + (m.length - 1) + "]=" + union2.polygons.length);
+  var u = union1.union(union2);
+  console.log("  unioned to " + u.polygons.length);
+  return u;
+}
+
+function tracksExcludeOutOfArea(tracks) {
+  var goodTracks = [];
+  tracks.forEach(track => {
+    var isGood = true;
+    if (track.length > 10) {
+      for (var i = 0; i < track.length; i++) {
+        var lat = track[i].lat;
+        var long = track[i].long;
+        if (lat < config.minLat || lat > config.maxLat ||
+          long < config.minLong || long > config.maxLong) {
+          isGood = false;
+          break;
+        }
+      }
+    } else { 
+      isGood = false; 
+    }
+    if (isGood) goodTracks.push(track);
+  });
+  return goodTracks;
 }
 
 readTracks()
   .then(tracks => {
+    console.log("Starting with " + tracks.length + " tracks");
+    tracks = tracksExcludeOutOfArea(tracks);
+    console.log("Left with " + tracks.length + " good tracks");
     tracks.forEach(trackSquashTimeComponent);
     var bounds = tracksGetBounds(tracks);
     console.log(bounds);
@@ -118,70 +147,70 @@ readTracks()
     console.log(bounds2);
 
     var modelBits = [];
-    var desiredDistance = Math.pow(config.printRadius,2); 
+    var desiredDistance = Math.pow(config.printRadius, 2);
 
-    for (var i1 = 0; i1 < tracks.length; i1++) { 
-      var track = tracks[i1]; 
-      if (track.length < 3) continue; 
-      var previousIndex = 0; 
+    for (var i1 = 0; i1 < tracks.length; i1++) {
+      var track = tracks[i1];
+      if (track.length < 3) continue;
+      var previousIndex = 0;
 
       modelBits.push(new CSG.sphere({
-        center:[track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
-        radius:config.printRadius/2,
-        resolution:8
+        center: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
+        radius: config.printRadius / 2,
+        resolution: 8
       }));
 
       // Ground
       modelBits.push(new CSG.sphere({
-        center:[track[previousIndex].long, track[previousIndex].lat, 0],
-        radius:config.printRadius/2,
-        resolution:8
+        center: [track[previousIndex].long, track[previousIndex].lat, 0],
+        radius: 1.5*(config.printRadius / 2),
+        resolution: 8
       }));
-       
-      for (var i2 = 1; i2 < track.length; i2++) { 
 
-        var distsq = Math.pow(track[i2].long-track[previousIndex].long,2) + 
-                     Math.pow(track[i2].lat -track[previousIndex].lat ,2) + 
-                     Math.pow(track[i2].time-track[previousIndex].time,2); 
-        if (i2 < track.length-1 && distsq < desiredDistance) continue; 
+      for (var i2 = 1; i2 < track.length; i2++) {
+
+        var distsq = Math.pow(track[i2].long - track[previousIndex].long, 2) +
+          Math.pow(track[i2].lat - track[previousIndex].lat, 2) +
+          Math.pow(track[i2].time - track[previousIndex].time, 2);
+        if (i2 < track.length - 1 && distsq < desiredDistance) continue;
 
         modelBits.push(new CSG.sphere({
-          center:[track[i2].long, track[i2].lat, track[i2].time],
-          radius:config.printRadius/2,
-          resolution:8
+          center: [track[i2].long, track[i2].lat, track[i2].time],
+          radius: config.printRadius / 2,
+          resolution: 8
         }));
         modelBits.push(new CSG.cylinder({
           start: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
           end: [track[i2].long, track[i2].lat, track[i2].time],
-          radius: config.printRadius/2,
+          radius: config.printRadius / 2,
           resolution: 8
         }));
 
         // Ground: 
         modelBits.push(new CSG.sphere({
-          center:[track[i2].long, track[i2].lat, 0],
-          radius:config.printRadius/2,
-          resolution:8
+          center: [track[i2].long, track[i2].lat, 0],
+          radius: 1.5*config.printRadius / 2,
+          resolution: 8
         }));
         modelBits.push(new CSG.cylinder({
           start: [track[previousIndex].long, track[previousIndex].lat, 0],
           end: [track[i2].long, track[i2].lat, 0],
-          radius: config.printRadius/2,
+          radius: 1.5*config.printRadius / 2,
           resolution: 8
         }));
 
-        if (i2 == track.length-1) { 
+        if (i2 == track.length - 1) {
           // pillar
           modelBits.push(new CSG.cylinder({
             start: [track[i2].long, track[i2].lat, 0],
             end: [track[i2].long, track[i2].lat, track[i2].time],
-            radius: config.printRadius/2,
+            radius: 1.5*config.printRadius / 2,
             resolution: 4
           }));
-          
+
         }
 
-        previousIndex = i2; 
+        previousIndex = i2;
       }
     }
 
