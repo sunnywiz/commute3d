@@ -6,10 +6,10 @@ const bluebird = require("bluebird");
 
 var config = {
   // input files
-  trackFiles: "H:/BtSyncTest1/Dropbox-Live/Dropbox/Apps/Torque/torque.tripLogs/*/*.csv",
-  csvLatitudeColumn: " Latitude",
-  csvLongitudeColumn: " Longitude",
-  csvTimeColumn: " Device Time",
+  trackFiles: "input/*.csv",
+  csvLatitudeColumn: "LAT",
+  csvLongitudeColumn: "LON",
+  csvTimeColumn: "TIME",
   minLat: 38.214872,
   minLong: -85.656204,
   maxLat: 38.356757,
