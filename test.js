@@ -10,16 +10,21 @@ var config = {
   csvLatitudeColumn: "LAT",
   csvLongitudeColumn: "LON",
   csvTimeColumn: "TIME",
+  
+  // filtering out non-applicable tracks
   minLat: 38.214872,
   minLong: -85.656204,
   maxLat: 38.356757,
   maxLong: -85.453142,
 
   // generated dimensions
-  printX: 200,
-  printY: 200,
-  printZ: 100,
-  printRadius: 2
+  printX: 100,
+  printY: 100,
+  printZ: 50,
+  printRadius: 1,
+
+  // extra supports
+  extraSupportsEvery: 20
 
 };
 
@@ -148,6 +153,7 @@ readTracks()
 
     var modelBits = [];
     var desiredDistance = Math.pow(config.printRadius, 2);
+    var desiredPillarDistance = Math.pow(config.extraSupportsEvery, 2);
 
     for (var i1 = 0; i1 < tracks.length; i1++) {
       var track = tracks[i1];
@@ -160,12 +166,14 @@ readTracks()
         resolution: 8
       }));
 
-      // Ground
+      // Ground -- technically should be the same as above.
       modelBits.push(new CSG.sphere({
         center: [track[previousIndex].long, track[previousIndex].lat, 0],
         radius: 1.5*(config.printRadius / 2),
         resolution: 8
       }));
+
+      var lastPillarIndex = 0; 
 
       for (var i2 = 1; i2 < track.length; i2++) {
 
@@ -199,7 +207,21 @@ readTracks()
           resolution: 8
         }));
 
+        let wantPillar = false; 
         if (i2 == track.length - 1) {
+          wantPillar = true; 
+        }
+
+        var distanceSinceLastPillar = 
+          Math.pow(track[i2].long - track[lastPillarIndex].long, 2) +
+          Math.pow(track[i2].lat - track[lastPillarIndex].lat, 2) +
+          Math.pow(track[i2].time - track[lastPillarIndex].time, 2);
+        if (distanceSinceLastPillar > desiredPillarDistance) { 
+          wantPillar = true; 
+          lastPillarIndex = i2; 
+        }
+
+        if (wantPillar) {
           // pillar
           modelBits.push(new CSG.cylinder({
             start: [track[i2].long, track[i2].lat, 0],
@@ -207,16 +229,18 @@ readTracks()
             radius: 1.5*config.printRadius / 2,
             resolution: 4
           }));
-
         }
 
         previousIndex = i2;
       }
     }
 
-    // console.time("fancyUnion")
-    // var modelBits1 = fancyUnion(modelBits,1);
-    // console.timeEnd("fancyUnion");
-
     cad.renderFile(modelBits, 'output.stl');
+
+    console.time("fancyUnion")
+    var modelBits1 = fancyUnion(modelBits,1);
+    console.timeEnd("fancyUnion");
+
+    cad.renderFile(modelBits1, 'union.stl');
+
   });
