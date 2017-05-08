@@ -18,10 +18,10 @@ var config = {
   maxLong: -85.453142,
 
   // generated dimensions
-  printX: 100,
-  printY: 100,
+  printX: 75,
+  printY: 75,
   printZ: 50,
-  printRadius: 1,
+  printRadius: 1.5,
 
   // extra supports
   extraSupportsEvery: 20
@@ -100,7 +100,7 @@ function trackRescale(track, bounds, config) {
 }
 
 function fancyUnion(m, i) {
-  console.log("fancyunion(" + m.length + "," + i + ")");
+  //console.log("fancyunion(" + m.length + "," + i + ")");
   if (m.length == 1) return m[0];
   if (m.length == 2) {
     return m[0].union(m[1]);
@@ -110,10 +110,10 @@ function fancyUnion(m, i) {
   var part2 = m.slice(midpoint + 1);
   var union1 = fancyUnion(part1, i + 1);
   var union2 = fancyUnion(part2, i + 1);
-  console.log("  got back u1[0.." + midpoint + "]=" + union1.polygons.length);
-  console.log("  got back u2[" + (midpoint + 1) + ".." + (m.length - 1) + "]=" + union2.polygons.length);
+  //console.log("  got back u1[0.." + midpoint + "]=" + union1.polygons.length);
+  //console.log("  got back u2[" + (midpoint + 1) + ".." + (m.length - 1) + "]=" + union2.polygons.length);
   var u = union1.union(union2);
-  console.log("  unioned to " + u.polygons.length);
+  //console.log("  unioned to " + u.polygons.length);
   return u;
 }
 
