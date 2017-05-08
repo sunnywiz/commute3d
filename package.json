@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.5.0",
     "csvdata": "^1.4.0",
     "glob": "^7.1.1",
     "jscad": "^1.1.0"

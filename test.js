@@ -214,7 +214,9 @@ readTracks()
       }
     }
 
-    // modelBits = fancyUnion(modelBits,1);
+    // console.time("fancyUnion")
+    // var modelBits1 = fancyUnion(modelBits,1);
+    // console.timeEnd("fancyUnion");
 
     cad.renderFile(modelBits, 'output.stl');
   });
