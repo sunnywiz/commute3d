@@ -20,11 +20,11 @@ var config = {
   // generated dimensions
   printX: 100,
   printY: 100,
-  printZ: 50,
+  printZ: 75,
   printRadius: 2,
 
   // extra supports
-  extraSupportsEvery: 20
+  extraSupportsEvery: 40
 
 };
 
@@ -163,20 +163,24 @@ readTracks()
     tracks.forEach(track => trackTopJustify(track, bounds2.t2));
 
     var superModel = [];
-    var desiredDistance = Math.pow(config.printRadius, 2);
-    var desiredPillarDistance = Math.pow(config.extraSupportsEvery, 2);
+    var dsqBetweenCylinders = Math.pow(config.printRadius, 2);
+    var dsqBetweenBaselines = Math.pow(config.printRadius * 4, 2);
+    var dsqBetweenPillars = Math.pow(config.extraSupportsEvery, 2);
 
-    for (var i1 = 0; i1 < tracks.length; i1++) {
-      var track = tracks[i1];
+    for (var trackIndex = 0; trackIndex < tracks.length; trackIndex++) {
+      var track = tracks[trackIndex];
       if (track.length < 3) continue;
-      var previousIndex = 0;
 
-      console.log("Working on a track...");
+      var lastCylinderIndex = 0;
+      var lastPillarIndex = 0;
+      var lastBaselineIndex = 0;
+
+      console.log("Working on track");
 
       var modelBits = [];
 
       modelBits.push(new CSG.sphere({
-        center: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
+        center: [track[lastCylinderIndex].long, track[lastCylinderIndex].lat, track[lastCylinderIndex].time],
         radius: config.printRadius / 2,
         resolution: 8
       }));
@@ -184,92 +188,100 @@ readTracks()
       // ground
 
       modelBits.push(new CSG.sphere({
-        center: [track[previousIndex].long, track[previousIndex].lat, 0],
+        center: [track[lastCylinderIndex].long, track[lastCylinderIndex].lat, 0],
         radius: (config.printRadius / 2),
         resolution: 8
       }));
 
       // pillar
 
-      if (track[previousIndex].time > config.printRadius) {
+      if (track[lastCylinderIndex].time > config.printRadius) {
         modelBits.push(new CSG.cylinder({
-          start: [track[previousIndex].long, track[previousIndex].lat, 0],
-          end: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
+          start: [track[lastCylinderIndex].long, track[lastCylinderIndex].lat, 0],
+          end: [track[lastCylinderIndex].long, track[lastCylinderIndex].lat, track[lastCylinderIndex].time],
           radius: config.printRadius / 2,
           resolution: 8
         }));
       }
 
-      var lastPillarIndex = 0;
+      for (var pointIndex = 1; pointIndex < track.length; pointIndex++) {
 
-      for (var i2 = 1; i2 < track.length; i2++) {
+        var cylinderDsq = Math.pow(track[pointIndex].long - track[lastCylinderIndex].long, 2) +
+          Math.pow(track[pointIndex].lat - track[lastCylinderIndex].lat, 2) +
+          Math.pow(track[pointIndex].time - track[lastCylinderIndex].time, 2);
 
-        var distsq = Math.pow(track[i2].long - track[previousIndex].long, 2) +
-          Math.pow(track[i2].lat - track[previousIndex].lat, 2) +
-          Math.pow(track[i2].time - track[previousIndex].time, 2);
-        if (i2 < track.length - 1 && distsq < desiredDistance) continue;
+        if (pointIndex < track.length - 1 && cylinderDsq < dsqBetweenCylinders) continue;
 
         modelBits.push(new CSG.sphere({
-          center: [track[i2].long, track[i2].lat, track[i2].time],
+          center: [track[pointIndex].long, track[pointIndex].lat, track[pointIndex].time],
           radius: config.printRadius / 2,
           resolution: 8
         }));
 
         modelBits.push(new CSG.cylinder({
-          start: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
-          end: [track[i2].long, track[i2].lat, track[i2].time],
+          start: [track[lastCylinderIndex].long, track[lastCylinderIndex].lat, track[lastCylinderIndex].time],
+          end: [track[pointIndex].long, track[pointIndex].lat, track[pointIndex].time],
           radius: config.printRadius / 2,
           resolution: 8
         }));
 
-        Ground: 
-        modelBits.push(new CSG.sphere({
-          center: [track[i2].long, track[i2].lat, 0],
-          radius: config.printRadius / 2,
-          resolution: 8
-        }));
+        // Ground: 
 
-        modelBits.push(new CSG.cylinder({
-          start: [track[previousIndex].long, track[previousIndex].lat, 0],
-          end: [track[i2].long, track[i2].lat, 0],
-          radius: config.printRadius / 2,
-          resolution: 8
-        }));
+        var baselineDsq = Math.pow(track[pointIndex].long - track[lastBaselineIndex].long, 2) +
+          Math.pow(track[pointIndex].lat - track[lastBaselineIndex].lat, 2) +
+          Math.pow(track[pointIndex].time - track[lastBaselineIndex].time, 2);
 
-        let wantPillar = false;
-        if (i2 == track.length - 1) {
-          wantPillar = true;
-        }
+        if (pointIndex == track.length - 1 || baselineDsq >= dsqBetweenBaselines) {
 
-        var distanceSinceLastPillar =
-          Math.pow(track[i2].long - track[lastPillarIndex].long, 2) +
-          Math.pow(track[i2].lat - track[lastPillarIndex].lat, 2) +
-          Math.pow(track[i2].time - track[lastPillarIndex].time, 2);
-        if (distanceSinceLastPillar > desiredPillarDistance) {
-          wantPillar = true;
-          lastPillarIndex = i2;
-        }
-
-        if (wantPillar) {
-          // pillar
-          modelBits.push(new CSG.cylinder({
-            start: [track[i2].long, track[i2].lat, 0],
-            end: [track[i2].long, track[i2].lat, track[i2].time],
+          modelBits.push(new CSG.sphere({
+            center: [track[pointIndex].long, track[pointIndex].lat, 0],
             radius: config.printRadius / 2,
-            resolution: 4
+            resolution: 8
           }));
-        }
 
-        previousIndex = i2;
+          modelBits.push(new CSG.cylinder({
+            start: [track[lastBaselineIndex].long, track[lastBaselineIndex].lat, 0],
+            end: [track[pointIndex].long, track[pointIndex].lat, 0],
+            radius: config.printRadius / 2,
+            resolution: 8
+          }));
+
+          lastBaselineIndex = pointIndex; 
+
+          let wantPillar = false;
+          if (pointIndex == track.length - 1) {
+            wantPillar = true;
+          }
+
+          var distanceSinceLastPillar =
+            Math.pow(track[pointIndex].long - track[lastPillarIndex].long, 2) +
+            Math.pow(track[pointIndex].lat - track[lastPillarIndex].lat, 2) +
+            Math.pow(track[pointIndex].time - track[lastPillarIndex].time, 2);
+          if (distanceSinceLastPillar > dsqBetweenPillars) {
+            wantPillar = true;
+            lastPillarIndex = pointIndex;
+          }
+
+          if (wantPillar) {
+            // pillar
+            modelBits.push(new CSG.cylinder({
+              start: [track[pointIndex].long, track[pointIndex].lat, 0],
+              end: [track[pointIndex].long, track[pointIndex].lat, track[pointIndex].time],
+              radius: config.printRadius / 2,
+              resolution: 4
+            }));
+          }
+        }
+        lastCylinderIndex = pointIndex;
       }
-      var modelBits1 = fancyUnion(modelBits,1);
-      superModel.push(modelBits1); 
+      var modelBits1 = fancyUnion(modelBits, 1);
+      superModel.push(modelBits1);
     }
 
-  //  cad.renderFile(superModel, 'output.stl');
+    //  cad.renderFile(superModel, 'output.stl');
 
     // console.time("fancyUnion")
-    var unionModel = fancyUnion(superModel,1);
+    var unionModel = fancyUnion(superModel, 1);
     // console.timeEnd("fancyUnion");
 
     cad.renderFile(unionModel, 'union.stl');
