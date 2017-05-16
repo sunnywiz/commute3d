@@ -162,7 +162,7 @@ readTracks()
 
     tracks.forEach(track => trackTopJustify(track, bounds2.t2));
 
-    var modelBits = [];
+    var superModel = [];
     var desiredDistance = Math.pow(config.printRadius, 2);
     var desiredPillarDistance = Math.pow(config.extraSupportsEvery, 2);
 
@@ -170,6 +170,10 @@ readTracks()
       var track = tracks[i1];
       if (track.length < 3) continue;
       var previousIndex = 0;
+
+      console.log("Working on a track...");
+
+      var modelBits = [];
 
       modelBits.push(new CSG.sphere({
         center: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
@@ -258,14 +262,16 @@ readTracks()
 
         previousIndex = i2;
       }
+      var modelBits1 = fancyUnion(modelBits,1);
+      superModel.push(modelBits1); 
     }
 
-   cad.renderFile(modelBits, 'output.stl');
+  //  cad.renderFile(superModel, 'output.stl');
 
     // console.time("fancyUnion")
-    // var modelBits1 = fancyUnion(modelBits,1);
+    var unionModel = fancyUnion(superModel,1);
     // console.timeEnd("fancyUnion");
 
-    // cad.renderFile(modelBits1, 'union.stl');
+    cad.renderFile(unionModel, 'union.stl');
 
   });
