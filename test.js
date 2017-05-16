@@ -10,7 +10,7 @@ var config = {
   csvLatitudeColumn: "LAT",
   csvLongitudeColumn: "LON",
   csvTimeColumn: "TIME",
-  
+
   // filtering out non-applicable tracks
   minLat: 38.214872,
   minLong: -85.656204,
@@ -18,10 +18,10 @@ var config = {
   maxLong: -85.453142,
 
   // generated dimensions
-  printX: 75,
-  printY: 75,
-  printZ: 50,
-  printRadius: 1.5,
+  printX: 150,
+  printY: 150,
+  printZ: 100,
+  printRadius: 2,
 
   // extra supports
   extraSupportsEvery: 20
@@ -131,12 +131,21 @@ function tracksExcludeOutOfArea(tracks) {
           break;
         }
       }
-    } else { 
-      isGood = false; 
+    } else {
+      isGood = false;
     }
     if (isGood) goodTracks.push(track);
   });
   return goodTracks;
+}
+
+function trackTopJustify(track, t2) {
+  var trackBounds = trackGetBounds(track);
+  if (trackBounds.t2 > t2) return;
+  var zOffset = t2 - trackBounds.t2;
+  track.forEach(point => {
+    point.time = point.time + zOffset;
+  });
 }
 
 readTracks()
@@ -150,6 +159,8 @@ readTracks()
     tracks.forEach(track => trackRescale(track, bounds, config));
     var bounds2 = tracksGetBounds(tracks);
     console.log(bounds2);
+
+    tracks.forEach(track => trackTopJustify(track, bounds2.t2));
 
     var modelBits = [];
     var desiredDistance = Math.pow(config.printRadius, 2);
@@ -166,14 +177,26 @@ readTracks()
         resolution: 8
       }));
 
-      // Ground -- technically should be the same as above.
+      // ground
+
       modelBits.push(new CSG.sphere({
         center: [track[previousIndex].long, track[previousIndex].lat, 0],
-        radius: 1.5*(config.printRadius / 2),
+        radius: 1.5 * (config.printRadius / 2),
         resolution: 8
       }));
 
-      var lastPillarIndex = 0; 
+      // pillar
+
+      if (track[previousIndex].time > config.printRadius) {
+        modelBits.push(new CSG.cylinder({
+          start: [track[previousIndex].long, track[previousIndex].lat, 0],
+          end: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
+          radius: 1.5 * config.printRadius / 2,
+          resolution: 4
+        }));
+      }
+
+      var lastPillarIndex = 0;
 
       for (var i2 = 1; i2 < track.length; i2++) {
 
@@ -187,6 +210,7 @@ readTracks()
           radius: config.printRadius / 2,
           resolution: 8
         }));
+
         modelBits.push(new CSG.cylinder({
           start: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
           end: [track[i2].long, track[i2].lat, track[i2].time],
@@ -194,31 +218,32 @@ readTracks()
           resolution: 8
         }));
 
-        // Ground: 
+        Ground: 
         modelBits.push(new CSG.sphere({
           center: [track[i2].long, track[i2].lat, 0],
-          radius: 1.5*config.printRadius / 2,
+          radius: 1.5 * config.printRadius / 2,
           resolution: 8
         }));
+
         modelBits.push(new CSG.cylinder({
           start: [track[previousIndex].long, track[previousIndex].lat, 0],
           end: [track[i2].long, track[i2].lat, 0],
-          radius: 1.5*config.printRadius / 2,
+          radius: 1.5 * config.printRadius / 2,
           resolution: 8
         }));
 
-        let wantPillar = false; 
+        let wantPillar = false;
         if (i2 == track.length - 1) {
-          wantPillar = true; 
+          wantPillar = true;
         }
 
-        var distanceSinceLastPillar = 
+        var distanceSinceLastPillar =
           Math.pow(track[i2].long - track[lastPillarIndex].long, 2) +
           Math.pow(track[i2].lat - track[lastPillarIndex].lat, 2) +
           Math.pow(track[i2].time - track[lastPillarIndex].time, 2);
-        if (distanceSinceLastPillar > desiredPillarDistance) { 
-          wantPillar = true; 
-          lastPillarIndex = i2; 
+        if (distanceSinceLastPillar > desiredPillarDistance) {
+          wantPillar = true;
+          lastPillarIndex = i2;
         }
 
         if (wantPillar) {
@@ -226,7 +251,7 @@ readTracks()
           modelBits.push(new CSG.cylinder({
             start: [track[i2].long, track[i2].lat, 0],
             end: [track[i2].long, track[i2].lat, track[i2].time],
-            radius: 1.5*config.printRadius / 2,
+            radius: 1.5 * config.printRadius / 2,
             resolution: 4
           }));
         }
@@ -235,7 +260,7 @@ readTracks()
       }
     }
 
-    cad.renderFile(modelBits, 'output.stl');
+   cad.renderFile(modelBits, 'output.stl');
 
     // console.time("fancyUnion")
     // var modelBits1 = fancyUnion(modelBits,1);
