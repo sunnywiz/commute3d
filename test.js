@@ -18,9 +18,9 @@ var config = {
   maxLong: -85.453142,
 
   // generated dimensions
-  printX: 150,
-  printY: 150,
-  printZ: 100,
+  printX: 100,
+  printY: 100,
+  printZ: 50,
   printRadius: 2,
 
   // extra supports
@@ -185,7 +185,7 @@ readTracks()
 
       modelBits.push(new CSG.sphere({
         center: [track[previousIndex].long, track[previousIndex].lat, 0],
-        radius: 1.5 * (config.printRadius / 2),
+        radius: (config.printRadius / 2),
         resolution: 8
       }));
 
@@ -195,8 +195,8 @@ readTracks()
         modelBits.push(new CSG.cylinder({
           start: [track[previousIndex].long, track[previousIndex].lat, 0],
           end: [track[previousIndex].long, track[previousIndex].lat, track[previousIndex].time],
-          radius: 1.5 * config.printRadius / 2,
-          resolution: 4
+          radius: config.printRadius / 2,
+          resolution: 8
         }));
       }
 
@@ -225,14 +225,14 @@ readTracks()
         Ground: 
         modelBits.push(new CSG.sphere({
           center: [track[i2].long, track[i2].lat, 0],
-          radius: 1.5 * config.printRadius / 2,
+          radius: config.printRadius / 2,
           resolution: 8
         }));
 
         modelBits.push(new CSG.cylinder({
           start: [track[previousIndex].long, track[previousIndex].lat, 0],
           end: [track[i2].long, track[i2].lat, 0],
-          radius: 1.5 * config.printRadius / 2,
+          radius: config.printRadius / 2,
           resolution: 8
         }));
 
@@ -255,7 +255,7 @@ readTracks()
           modelBits.push(new CSG.cylinder({
             start: [track[i2].long, track[i2].lat, 0],
             end: [track[i2].long, track[i2].lat, track[i2].time],
-            radius: 1.5 * config.printRadius / 2,
+            radius: config.printRadius / 2,
             resolution: 4
           }));
         }
