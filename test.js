@@ -6,7 +6,7 @@ const bluebird = require("bluebird");
 
 var config = {
   // input files
-  trackFiles: "input/*.csv",
+  trackFiles: "input/Home*Work*.csv",
   csvLatitudeColumn: "LAT",
   csvLongitudeColumn: "LON",
   csvTimeColumn: "TIME",
@@ -237,10 +237,10 @@ readTracks()
 
     cad.renderFile(modelBits, 'output.stl');
 
-    console.time("fancyUnion")
-    var modelBits1 = fancyUnion(modelBits,1);
-    console.timeEnd("fancyUnion");
+    // console.time("fancyUnion")
+    // var modelBits1 = fancyUnion(modelBits,1);
+    // console.timeEnd("fancyUnion");
 
-    cad.renderFile(modelBits1, 'union.stl');
+    // cad.renderFile(modelBits1, 'union.stl');
 
   });
